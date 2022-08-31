@@ -200,7 +200,9 @@ class MainActivity : AppCompatActivity() {
         var viewport:Viewport = graph!!.getViewport();
         viewport.setYAxisBoundsManual(true);
         viewport.setMinY(0.0);
-        viewport.setMaxY(10.0);
+        viewport.setMinX(0.0);
+        viewport.setMaxY(150.0);
+        viewport.setMaxX(150.0)
         viewport.setScrollable(true);
 
 
