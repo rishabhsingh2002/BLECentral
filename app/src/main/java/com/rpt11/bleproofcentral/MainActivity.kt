@@ -1,7 +1,6 @@
 package com.rpt11.bleproofcentral
 
 import android.Manifest
-import android.R.id.button1
 import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
@@ -13,8 +12,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.hardware.SensorEventListener
 import android.os.*
 import android.util.Log
 import android.view.View
@@ -26,7 +23,9 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.jjoe64.graphview.GraphView
+import com.jjoe64.graphview.Viewport
 import com.jjoe64.graphview.series.DataPoint
+import com.jjoe64.graphview.series.LineGraphSeries
 import com.jjoe64.graphview.series.PointsGraphSeries
 import java.text.SimpleDateFormat
 import java.util.*
@@ -120,10 +119,8 @@ class MainActivity : AppCompatActivity() {
         get() = findViewById<TextView>(R.id.tv_x_axis)
     private val tvYAxis: TextView
         get() = findViewById<TextView>(R.id.tv_y_axis)
-    private val btnShowXY: Button
-        get() = findViewById<Button>(R.id.btn_show_xy)
 
-    var mScatterPlot: GraphView? = null
+    var graph: GraphView? = null
 
 
     //make xyValueArray global
@@ -183,13 +180,32 @@ class MainActivity : AppCompatActivity() {
     private var characteristicForReadXAxis: BluetoothGattCharacteristic? = null
     private var characteristicForReadYAxis: BluetoothGattCharacteristic? = null
 
+    //TODO: graph -2
+    private val RANDOM: Random? = Random()
+    private var series: LineGraphSeries<DataPoint>? = null
+    private var lastX = 0.0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //graph
-        mScatterPlot = findViewById<View>(R.id.lineChart) as GraphView
+        //TODO: did find view by id -1
+        graph = findViewById<View>(R.id.lineChart) as GraphView
         xyValueArray = ArrayList()
+
+        // data
+        series = LineGraphSeries<DataPoint>();
+        graph!!.addSeries(series);
+        // customize a little bit viewport
+        var viewport:Viewport = graph!!.getViewport();
+        viewport.setYAxisBoundsManual(true);
+        viewport.setMinY(0.0);
+        viewport.setMaxY(10.0);
+        viewport.setScrollable(true);
+
+
+
+
         //end
 
       btnUser.setOnClickListener {
@@ -201,11 +217,11 @@ class MainActivity : AppCompatActivity() {
             clUser.visibility = View.GONE
             clDoctor.visibility = View.VISIBLE
         }
-        if (tvXAxis.text.isEmpty() && tvYAxis.text.isEmpty()){
-
-        }else{
-            init()
-        }
+//        if (tvXAxis.text.isEmpty() && tvYAxis.text.isEmpty()){
+//
+//        }else{
+//            //init()
+//        }
 
         btnShowX.setOnClickListener {
             readXAxis()
@@ -214,11 +230,11 @@ class MainActivity : AppCompatActivity() {
             readYAxis()
         }
 
-        btnShowXY.setOnClickListener {
-//            readXAxis()
-//            Log.d("###","XAxis appeared")
-//            readYAxis()
-        }
+//        btnShowXY.setOnClickListener {
+////            readXAxis()
+////            Log.d("###","XAxis appeared")
+////            readYAxis()
+//        }
 
 
 
@@ -276,18 +292,27 @@ class MainActivity : AppCompatActivity() {
           //  ll_five_details.visibility = View.INVISIBLE
         }
 
-        //graph
-        //angle
+
+        //graph 1
         val timer5 = object: CountDownTimer(300, 10) {
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                btnShowXY.performClick()
+                btnShowX.performClick()
                 this.start()
             }
         }
         timer5.start()
 
+        val timer6 = object: CountDownTimer(300, 10) {
+            override fun onTick(millisUntilFinished: Long) {}
+
+            override fun onFinish() {
+                btnShowY.performClick()
+                this.start()
+            }
+        }
+        timer6.start()
 
 
 
@@ -324,6 +349,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
         timer4.start()
+
+    }
+
+    //TODO: -3
+    override fun onResume() {
+        super.onResume()
+
+        // we're going to simulate real time with thread that append data to the graph
+        // we're going to simulate real time with thread that append data to the graph
+        Thread {
+            // we add 100 new entries
+            for (i in 0..99) {
+                runOnUiThread { addEntry() }
+
+                // sleep to slow down the add of entries
+                try {
+                    Thread.sleep(600)
+                } catch (e: InterruptedException) {
+                    // manage error ...
+                }
+            }
+        }.start()
+
+    }
+
+    //TODO -4
+    // add random data to graph
+    private  fun addEntry() {
+        // here, we choose to display max 10 points on the viewport and we scroll to end
+        var x = tvXAxis.text.toString().toDouble()
+        var y = tvYAxis.text.toString().toDouble()
+
+            return series!!.appendData(DataPoint(x, y), true, 10)
+
 
     }
 
@@ -1230,68 +1289,68 @@ class MainActivity : AppCompatActivity() {
     //endregion
 
 
-    private fun init() {
-        //declare the xySeries Object
-        xySeries = PointsGraphSeries()
-        btnShowXY!!.setOnClickListener {
-            if (tvXAxis!!.text.toString() != "" && tvYAxis!!.text.toString() != "") {
-                val x = tvXAxis!!.text.toString().toDouble()
-                val y = tvYAxis!!.text.toString().toDouble()
-                Log.d(TAG, "onClick: Adding a new point. (x,y): ($x,$y)")
-                xyValueArray!!.add(XYValues(x, y))
-                init()
-            } else {
-                toastMessage("You must fill out both fields!")
-            }
-        }
+//    private fun init() {
+//        //declare the xySeries Object
+//        xySeries = PointsGraphSeries()
+//        btnShowXY!!.setOnClickListener {
+//            if (tvXAxis!!.text.toString() != "" && tvYAxis!!.text.toString() != "") {
+//                val x = tvXAxis!!.text.toString().toDouble()
+//                val y = tvYAxis!!.text.toString().toDouble()
+//                Log.d(TAG, "onClick: Adding a new point. (x,y): ($x,$y)")
+//                xyValueArray!!.add(XYValues(x, y))
+//                init()
+//            } else {
+//                toastMessage("You must fill out both fields!")
+//            }
+//        }
 
-        //little bit of exception handling for if there is no data.
-        if (xyValueArray!!.size != 0) {
-            createScatterPlot()
-        } else {
-            Log.d(TAG, "onCreate: No data to plot.")
-        }
-    }
+//        //little bit of exception handling for if there is no data.
+//        if (xyValueArray!!.size != 0) {
+//            createScatterPlot()
+//        } else {
+//            Log.d(TAG, "onCreate: No data to plot.")
+//        }
+//    }
 
-    private fun createScatterPlot() {
-        Log.d(TAG, "createScatterPlot: Creating scatter plot.")
-
-        //sort the array of xy values
-        xyValueArray = sortArray(xyValueArray!!)
-
-        //add the data to the series
-        for (i in xyValueArray!!.indices) {
-            try {
-                val x = xyValueArray!![i].getX()
-                val y = xyValueArray!![i].getY()
-                xySeries!!.appendData(DataPoint(x, y), true, 1000)
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "createScatterPlot: IllegalArgumentException: " + e.message)
-            }
-        }
-
-        //set some properties
-        xySeries!!.shape = PointsGraphSeries.Shape.POINT
-        xySeries!!.color = Color.BLUE
-        xySeries!!.size = 4f
-
-        //set Scrollable and Scaleable
-        mScatterPlot!!.viewport.isScalable = true
-        mScatterPlot!!.viewport.setScalableY(true)
-        mScatterPlot!!.viewport.isScrollable = true
-        mScatterPlot!!.viewport.setScrollableY(true)
-
-        //set manual x bounds
-        mScatterPlot!!.viewport.isYAxisBoundsManual = true
-        mScatterPlot!!.viewport.setMaxY(150.0)
-        mScatterPlot!!.viewport.setMinY(-150.0)
-
-        //set manual y bounds
-        mScatterPlot!!.viewport.isXAxisBoundsManual = true
-        mScatterPlot!!.viewport.setMaxX(150.0)
-        mScatterPlot!!.viewport.setMinX(-150.0)
-        mScatterPlot!!.addSeries(xySeries)
-    }
+//    private fun createScatterPlot() {
+//        Log.d(TAG, "createScatterPlot: Creating scatter plot.")
+//
+//        //sort the array of xy values
+//        xyValueArray = sortArray(xyValueArray!!)
+//
+//        //add the data to the series
+//        for (i in xyValueArray!!.indices) {
+//            try {
+//                val x = xyValueArray!![i].getX()
+//                val y = xyValueArray!![i].getY()
+//                xySeries!!.appendData(DataPoint(x, y), true, 1000)
+//            } catch (e: IllegalArgumentException) {
+//                Log.e(TAG, "createScatterPlot: IllegalArgumentException: " + e.message)
+//            }
+//        }
+//
+//        //set some properties
+//        xySeries!!.shape = PointsGraphSeries.Shape.POINT
+//        xySeries!!.color = Color.BLUE
+//        xySeries!!.size = 4f
+//
+//        //set Scrollable and Scaleable
+//        mScatterPlot!!.viewport.isScalable = true
+//        mScatterPlot!!.viewport.setScalableY(true)
+//        mScatterPlot!!.viewport.isScrollable = true
+//        mScatterPlot!!.viewport.setScrollableY(true)
+//
+//        //set manual x bounds
+//        mScatterPlot!!.viewport.isYAxisBoundsManual = true
+//        mScatterPlot!!.viewport.setMaxY(150.0)
+//        mScatterPlot!!.viewport.setMinY(-150.0)
+//
+//        //set manual y bounds
+//        mScatterPlot!!.viewport.isXAxisBoundsManual = true
+//        mScatterPlot!!.viewport.setMaxX(150.0)
+//        mScatterPlot!!.viewport.setMinX(-150.0)
+//        mScatterPlot!!.addSeries(xySeries)
+//    }
 
     /**
      * Sorts an ArrayList<XYValue> with respect to the x values.
@@ -1355,4 +1414,5 @@ class MainActivity : AppCompatActivity() {
     private fun toastMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+
 }
